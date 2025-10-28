@@ -1,0 +1,138 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: vehicle_damage_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: vehicle_damage_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vehicle_damage_network
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: vehicle_damage_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - vehicle_damage_network
+
+  # Redis for Celery
+  redis:
+    image: redis:7-alpine
+    container_name: vehicle_damage_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vehicle_damage_network
+
+  # FastAPI Application
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: vehicle_damage_api
+    environment:
+      - DATABASE_URL=postgresql://damage_user:damage_pass@postgres:5432/vehicle_damage_db
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MODEL_DEVICE=cpu
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+      - ./data/models:/app/data/models
+      - ./data/uploads:/app/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - vehicle_damage_network
+
+  # Celery Worker
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: vehicle_damage_celery
+    environment:
+      - DATABASE_URL=postgresql://damage_user:damage_pass@postgres:5432/vehicle_damage_db
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MODEL_DEVICE=cpu
+    volumes:
+      - ./src:/app/src
+      - ./data/models:/app/data/models
+      - ./data/uploads:/app/data/uploads
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - vehicle_damage_network
+
+  # Streamlit UI
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: vehicle_damage_streamlit
+    environment:
+      - API_URL=http://api:8000
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./src/ui:/app/src/ui
+    depends_on:
+      - api
+    networks:
+      - vehicle_damage_network
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  vehicle_damage_network:
+    driver: bridge
