@@ -1,0 +1,32 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Системные зависимости для PyTorch + YOLO
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установим YOLOv9n зависимости
+COPY requirements.yolov9n.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.yolov9n.txt
+
+# Скопируем source code
+COPY src/ ./src/
+RUN mkdir -p data models uploads logs
+
+# Экспортируем порт
+EXPOSE 8080
+
+# Health check для YOLOv9n
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8080/health', timeout=5)"
+
+# Запуск с YOLOv9n
+CMD ["python", "-m", "uvicorn", "src.api.yolov9n_api:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]

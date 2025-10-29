@@ -1,12 +1,12 @@
 services:
-  # Vehicle Damage Detection System с YOLOv9n
-  vehicle-damage-detector:
+  # YOLOv9n Vehicle Damage Detection System (оптимальная версия)
+  vehicle-damage-yolov9n:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.yolov9n
     container_name: vehicle_damage_yolov9n
     environment:
-      # Базовая конфигурация
+      # Конфигурация с YOLOv9n моделью
       - DATABASE_URL=sqlite:///./data/detection.db
       - MODEL_PATH=./models
       - UPLOAD_PATH=./uploads
@@ -25,7 +25,7 @@ services:
       - TIMEOUT=60
       - MAX_CONCURRENT_REQUESTS=3
     ports:
-      - "8000:8000"
+      - "8080:8080"
     volumes:
       - ./data:/app/data
       - ./uploads:/app/uploads
@@ -37,7 +37,7 @@ services:
           memory: 1G
           cpus: '1.0'
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=10)"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8080/health', timeout=10)"]
       interval: 30s
       timeout: 15s
       retries: 5

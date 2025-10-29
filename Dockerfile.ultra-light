@@ -1,0 +1,32 @@
+FROM python:3.9-alpine
+
+WORKDIR /app
+
+# Минимальные системные зависимости
+RUN apk add --no-cache \
+    libgl \
+    libsm \
+    libxext \
+    libxrender \
+    libgcc \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Установим только минимальные зависимости
+COPY requirements.minimal.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.minimal.txt
+
+# Скопируем только необходимые файлы
+COPY src/ ./src/
+RUN mkdir -p data uploads models logs
+
+# Экспортируем порт
+EXPOSE 8080
+
+# Проверка здоровья
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Запуск ultra-light приложения
+CMD ["python", "-m", "uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]

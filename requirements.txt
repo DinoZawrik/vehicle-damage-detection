@@ -1,70 +1,19 @@
-# Deep Learning & Computer Vision
+# YOLOv9n зависимости для vehicle damage detection
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pillow>=9.0.0
+opencv-python>=4.5.0
+requests>=2.25.0
+aiofiles>=0.8.0
+python-multipart>=0.0.6
+
+# LLM анализ - OpenRouter API
+httpx>=0.24.0
+openai>=1.0.0
+
+# ML модели - YOLOv9n (легковесная)
 torch>=2.0.0
 torchvision>=0.15.0
-ultralytics>=8.1.0
-opencv-python>=4.8.0
-albumentations>=1.3.0
-Pillow>=10.0.0
-scikit-image>=0.21.0
-
-# Machine Learning
-scikit-learn>=1.3.0
-xgboost>=2.0.0
-lightgbm>=4.0.0
-pandas>=2.0.0
-numpy>=1.24.0
-
-# API & Backend
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-python-multipart>=0.0.6
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
-
-# Database
-sqlalchemy>=2.0.0
-psycopg2-binary>=2.9.0
-alembic>=1.12.0
-
-# Storage
-minio>=7.2.0
-boto3>=1.28.0
-
-# Task Queue
-celery>=5.3.0
-redis>=5.0.0
-
-# Image Processing & Analysis
-imagehash>=4.3.0
-scikit-learn>=1.3.0
-
-# PDF Generation
-reportlab>=4.0.0
-matplotlib>=3.8.0
-seaborn>=0.12.0
-
-# UI
-streamlit>=1.28.0
-plotly>=5.17.0
-streamlit-aggrid>=0.3.4
-
-# Utils
-python-dotenv>=1.0.0
-pyyaml>=6.0
-tqdm>=4.66.0
-requests>=2.31.0
-
-# Testing
-pytest>=7.4.0
-pytest-cov>=4.1.0
-pytest-asyncio>=0.21.0
-httpx>=0.25.0
-
-# Development
-black>=23.0.0
-flake8>=6.1.0
-mypy>=1.5.0
-pre-commit>=3.4.0
-
-# Monitoring (Optional)
-prometheus-client>=0.17.0
+ultralytics>=8.0.0
+numpy>=1.21.0

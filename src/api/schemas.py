@@ -9,6 +9,44 @@ from datetime import datetime
 
 class DetectionResponse(BaseModel):
     """Schema for detection results."""
+    class_name: str
+    confidence: float
+    bbox: List[int]  # [x1, y1, x2, y2]
+    area: int
+
+
+class YOLOv9DetectionSummary(BaseModel):
+    """Schema for YOLOv9n detection summary."""
+    detections: List[DetectionResponse]
+    total_detections: int
+    severity: str
+    estimated_cost: float
+    confidence: float
+    processing_time: float
+
+
+class HumanReadableReport(BaseModel):
+    """Schema for LLM human-readable damage report."""
+    summary: str = Field(..., description="Краткое описание ситуации")
+    detailed_description: str = Field(..., description="Подробное описание повреждений")
+    damage_areas: List[str] = Field(..., description="Список поврежденных областей")
+    severity_level: str = Field(..., description="Уровень серьезности")
+    estimated_cost_range: str = Field(..., description="Диапазон стоимости ремонта")
+    recommendations: List[str] = Field(..., description="Рекомендации")
+    confidence_score: float = Field(..., description="Уровень уверенности в анализе")
+
+
+class LLMAnalysisResponse(BaseModel):
+    """Schema for complete LLM analysis response."""
+    raw_detection: YOLOv9DetectionSummary
+    human_report: HumanReadableReport
+    image_info: Dict[str, Any]
+    model_info: Dict[str, Any]
+    llm_analysis_time: float
+
+
+class DetectionResponse(BaseModel):
+    """Schema for detection results."""
     num_detections: int
     detections: List[Dict[str, Any]]
     inference_time: float
@@ -79,6 +117,7 @@ class HealthResponse(BaseModel):
     version: str
     model_loaded: bool
     database_connected: bool
+    llm_analyzer_status: str = Field(..., description="Статус LLM анализатора")
 
 
 class ErrorResponse(BaseModel):
