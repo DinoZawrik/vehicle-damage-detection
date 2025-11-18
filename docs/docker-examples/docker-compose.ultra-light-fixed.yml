@@ -1,0 +1,45 @@
+services:
+  # Ultra-light система обнаружения повреждений автомобиля (рабочая версия)
+  vehicle-damage-detector:
+    build:
+      context: .
+      dockerfile: Dockerfile.ultra-light-fixed
+    container_name: vehicle_damage_ultra_light_fixed
+    environment:
+      # Базовая конфигурация с минимальными требованиями
+      - DATABASE_URL=sqlite:///./data/detection.db
+      - MODEL_PATH=./models
+      - UPLOAD_PATH=./uploads
+      - MAX_IMAGE_SIZE=2MB
+      - LOG_LEVEL=WARNING
+      
+      # Ultra-light ML модель конфигурация
+      - MODEL_DEVICE=cpu
+      - MODEL_VARIANT=tiny
+      - MODEL_CONFIDENCE=0.3
+      - MODEL_IOU=0.5
+      - DISABLE_PRETRAINED=true
+      - USE_FAKE_MODEL=true
+      
+      # Минимальные системные настройки
+      - WORKERS=1
+      - TIMEOUT=30
+      - MAX_CONCURRENT_REQUESTS=2
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      - ./models:/app/models
+      - ./src:/app/src
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

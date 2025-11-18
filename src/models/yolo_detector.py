@@ -1,8 +1,8 @@
 """
-YOLOv11/v8 Damage Detection Module
+YOLOv9n Damage Detection Module (Optimized for Maximum Accuracy)
 
-This module handles the core damage detection using YOLO models.
-Supports both YOLOv8 and YOLOv11 for comparison.
+This module handles the core damage detection using YOLOv9n ultra-lightweight model.
+Optimized for maximum detection accuracy while maintaining low resource requirements.
 """
 
 from ultralytics import YOLO
@@ -15,33 +15,41 @@ import torch
 
 class YOLODamageDetector:
     """
-    Wrapper class for YOLO-based vehicle damage detection.
+    Wrapper class for YOLO-based vehicle damage detection using YOLOv9n.
 
     Attributes:
-        model: Loaded YOLO model
+        model: Loaded YOLO model (YOLOv9n)
         conf_threshold: Confidence threshold for detections
         iou_threshold: IOU threshold for NMS
         device: Device for inference (cuda/cpu)
+        imgsz: Input image size for inference (optimized for accuracy)
+        multi_scale: Enable multi-scale testing for better accuracy
     """
 
     def __init__(
         self,
-        model_path: str = "yolov11m.pt",
-        conf_threshold: float = 0.25,
-        iou_threshold: float = 0.45,
-        device: Optional[str] = None
+        model_path: str = "yolov9n.pt",
+        conf_threshold: float = 0.35,
+        iou_threshold: float = 0.50,
+        device: Optional[str] = None,
+        imgsz: int = 640,
+        multi_scale: bool = True
     ):
         """
-        Initialize the YOLO detector.
+        Initialize the YOLO detector with accuracy optimizations.
 
         Args:
-            model_path: Path to trained YOLO weights or model name
-            conf_threshold: Minimum confidence for detections
-            iou_threshold: IOU threshold for Non-Maximum Suppression
+            model_path: Path to trained YOLO weights (default: yolov9n.pt)
+            conf_threshold: Minimum confidence for detections (0.35 for higher sensitivity)
+            iou_threshold: IOU threshold for Non-Maximum Suppression (0.50 for better precision)
             device: Device to run inference on ('cuda', 'cpu', or None for auto)
+            imgsz: Input image size for inference (640 for balanced accuracy/speed)
+            multi_scale: Enable test-time augmentation for better accuracy
         """
         self.conf_threshold = conf_threshold
         self.iou_threshold = iou_threshold
+        self.imgsz = imgsz
+        self.multi_scale = multi_scale
 
         # Auto-detect device if not specified
         if device is None:
@@ -63,16 +71,16 @@ class YOLODamageDetector:
         image: np.ndarray,
         conf: Optional[float] = None,
         iou: Optional[float] = None,
-        augment: bool = False
+        augment: bool = None
     ) -> Dict:
         """
-        Run inference on a single image.
+        Run inference on a single image with accuracy optimizations.
 
         Args:
             image: Input image (numpy array, BGR format)
             conf: Override confidence threshold
             iou: Override IOU threshold
-            augment: Use test-time augmentation
+            augment: Use test-time augmentation (default: self.multi_scale)
 
         Returns:
             Dictionary containing:
@@ -84,15 +92,19 @@ class YOLODamageDetector:
         """
         conf = conf or self.conf_threshold
         iou = iou or self.iou_threshold
+        augment = augment if augment is not None else self.multi_scale
 
-        # Run inference
+        # Run inference with accuracy optimizations
         results = self.model.predict(
             image,
             conf=conf,
             iou=iou,
+            imgsz=self.imgsz,
             augment=augment,
             device=self.device,
-            verbose=False
+            verbose=False,
+            half=False,  # Use full precision for better accuracy
+            max_det=300  # Detect more objects, filter by confidence
         )
 
         # Parse results
@@ -120,13 +132,16 @@ class YOLODamageDetector:
         conf = conf or self.conf_threshold
         iou = iou or self.iou_threshold
 
-        # Batch inference
+        # Batch inference with accuracy optimizations
         results = self.model.predict(
             images,
             conf=conf,
             iou=iou,
+            imgsz=self.imgsz,
             device=self.device,
-            verbose=False
+            verbose=False,
+            half=False,  # Use full precision for better accuracy
+            max_det=300  # Detect more objects
         )
 
         # Parse all results
@@ -354,10 +369,13 @@ class YOLODamageDetector:
 
 # Example usage
 if __name__ == "__main__":
-    # Initialize detector
+    # Initialize detector with accuracy optimizations
     detector = YOLODamageDetector(
-        model_path="yolov11m.pt",  # or path to your trained model
-        conf_threshold=0.25
+        model_path="yolov9n.pt",  # Ultra-lightweight model
+        conf_threshold=0.35,  # Higher sensitivity
+        iou_threshold=0.50,  # Better precision
+        imgsz=640,  # Balanced accuracy/speed
+        multi_scale=True  # Enable TTA for better accuracy
     )
 
     # Load test image

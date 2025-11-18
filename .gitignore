@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 *.so
 .Python
 build/
@@ -27,6 +28,14 @@ env/
 ENV/
 .venv
 
+# Node
+node_modules/
+web/node_modules/
+web/dist/
+web/build/
+.npm
+.yarn
+
 # IDEs
 .vscode/
 .idea/
@@ -37,25 +46,44 @@ ENV/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-*.ipynb
+# *.ipynb  <-- Commented out to allow notebooks in the repo
+# If you want to ignore all notebooks except specific ones:
+# *.ipynb
+# !notebooks/*.ipynb
 
-# Model weights and data
+# Models
+models/*.pt
+models/*.pth
+models/*.onnx
+!models/.gitkeep
+
+# Data
 data/raw/*
 data/processed/*
-data/models/*.pt
-data/models/*.pth
-data/models/*.onnx
+data/uploads/*
+data/models/*
+data/yolo_dataset/
+data/simple_test_dataset/
+!data/demo_images/
+!data/test_samples/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/models/.gitkeep
+!data/test_samples/
+!data/uploads/.gitkeep
 
 # Logs
 logs/
 *.log
+runs/
+
+# Uploads (Root)
+uploads/
 
 # Environment variables
 .env
 .env.local
+.env.production
 
 # Database
 *.db
@@ -71,11 +99,16 @@ htmlcov/
 # Docker
 .docker/
 
-# MinIO data
-minio_data/
-
 # Temporary files
 tmp/
 temp/
 *.tmp
-/.claude
+.claude
+
+# Generated Examples
+examples/demo_results/*
+!examples/demo_results/.gitkeep
+
+# Old backups
+*.old.md
+README.old.md

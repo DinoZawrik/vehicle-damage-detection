@@ -17,3 +17,10 @@ torch>=2.0.0
 torchvision>=0.15.0
 ultralytics>=8.0.0
 numpy>=1.21.0
+
+# SAM для точной сегментации повреждений
+segment-anything>=1.0.0
+timm>=0.9.0
+
+# CLIP для семантического анализа
+open-clip-torch>=2.20.0

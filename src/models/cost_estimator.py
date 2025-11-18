@@ -114,6 +114,114 @@ class CostEstimator:
             "severity_multiplier": mult
         }
 
+    def estimate_cost_with_area(
+        self,
+        damage_classification: Dict[str, Any],
+        damage_area: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Estimate repair cost with precise area calculations from segmentation.
+        
+        Args:
+            damage_classification: Output from DamageClassifier
+            damage_area: Area calculations from SAM segmentation
+            
+        Returns:
+            Enhanced cost estimate with area-based pricing
+        """
+        base_estimate = self.estimate_cost(damage_classification)
+        
+        if not damage_area or damage_area.get('total_pixels', 0) == 0:
+            return base_estimate
+        
+        # Get area-based adjustments
+        total_pixels = damage_area.get('total_pixels', 0)
+        image_area = damage_classification.get('image_area', 1)
+        area_ratio = total_pixels / image_area
+        
+        # Area-based cost multipliers
+        if area_ratio > 0.1:  # Large damage area
+            area_multiplier = 1.8
+        elif area_ratio > 0.05:  # Medium damage area
+            area_multiplier = 1.4
+        elif area_ratio > 0.01:  # Small damage area
+            area_multiplier = 1.1
+        else:  # Very small damage area
+            area_multiplier = 1.0
+        
+        # Adjust costs based on area
+        enhanced_estimate = base_estimate.copy()
+        enhanced_estimate['estimated_cost'] *= area_multiplier
+        enhanced_estimate['min_cost'] *= area_multiplier
+        enhanced_estimate['max_cost'] *= area_multiplier
+        enhanced_estimate['parts_cost'] *= area_multiplier
+        enhanced_estimate['area_multiplier'] = area_multiplier
+        enhanced_estimate['damage_area_pixels'] = total_pixels
+        enhanced_estimate['damage_area_ratio'] = area_ratio
+        
+        # Add area information to breakdown
+        if 'breakdown' in enhanced_estimate:
+            enhanced_estimate['breakdown']['area_analysis'] = {
+                'total_pixels': total_pixels,
+                'area_ratio': area_ratio,
+                'area_multiplier': area_multiplier
+            }
+        
+        return enhanced_estimate
+
+    def estimate_cost_with_semantic(
+        self,
+        base_estimate: Dict[str, Any],
+        semantic_predictions: Dict[str, float]
+    ) -> Dict[str, Any]:
+        """
+        Enhance cost estimate with semantic analysis confidence.
+        
+        Args:
+            base_estimate: Base cost estimate
+            semantic_predictions: CLIP semantic predictions with confidence scores
+            
+        Returns:
+            Enhanced cost estimate with semantic confidence adjustments
+        """
+        if not semantic_predictions:
+            return base_estimate
+        
+        enhanced_estimate = base_estimate.copy()
+        
+        # Calculate semantic confidence boost
+        max_confidence = max(semantic_predictions.values()) if semantic_predictions else 0.0
+        avg_confidence = sum(semantic_predictions.values()) / len(semantic_predictions) if semantic_predictions else 0.0
+        
+        # Confidence-based adjustments
+        if max_confidence > 0.8:
+            confidence_multiplier = 1.2  # High confidence
+        elif max_confidence > 0.6:
+            confidence_multiplier = 1.1  # Medium confidence
+        elif max_confidence > 0.4:
+            confidence_multiplier = 1.05  # Low confidence
+        else:
+            confidence_multiplier = 1.0  # Very low confidence
+        
+        # Apply confidence boost to costs
+        enhanced_estimate['estimated_cost'] *= confidence_multiplier
+        enhanced_estimate['min_cost'] *= confidence_multiplier
+        enhanced_estimate['max_cost'] *= confidence_multiplier
+        enhanced_estimate['labor_cost'] *= confidence_multiplier
+        enhanced_estimate['semantic_confidence'] = max_confidence
+        enhanced_estimate['semantic_multiplier'] = confidence_multiplier
+        
+        # Add semantic information to breakdown
+        if 'breakdown' in enhanced_estimate:
+            enhanced_estimate['breakdown']['semantic_analysis'] = {
+                'top_prediction_confidence': max_confidence,
+                'avg_prediction_confidence': avg_confidence,
+                'confidence_multiplier': confidence_multiplier,
+                'predicted_classes': semantic_predictions
+            }
+        
+        return enhanced_estimate
+
     def _get_base_cost(self, damage_type: str) -> float:
         """
         Get base cost for a damage type.
